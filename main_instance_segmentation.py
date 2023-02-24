@@ -11,9 +11,10 @@ from utils.utils import (
     flatten_dict,
     load_baseline_model,
     load_checkpoint_with_missing_or_exsessive_keys,
-    load_backbone_checkpoint_with_missing_or_exsessive_keys
+    load_backbone_checkpoint_with_missing_or_exsessive_keys,
 )
 from pytorch_lightning import Trainer, seed_everything
+import pdb
 
 
 def get_parameters(cfg: DictConfig):
@@ -39,7 +40,9 @@ def get_parameters(cfg: DictConfig):
         os.makedirs(cfg.general.save_dir)
     else:
         print("EXPERIMENT ALREADY EXIST")
-        cfg['trainer']['resume_from_checkpoint'] = f"{cfg.general.save_dir}/last-epoch.ckpt"
+        cfg["trainer"][
+            "resume_from_checkpoint"
+        ] = f"{cfg.general.save_dir}/last-epoch.ckpt"
 
     for log in cfg.logging:
         print(log)
@@ -87,13 +90,15 @@ def test(cfg: DictConfig):
         gpus=cfg.general.gpus,
         logger=loggers,
         weights_save_path=str(cfg.general.save_dir),
-        **cfg.trainer
+        **cfg.trainer,
     )
     runner.test(model)
 
+
 @hydra.main(config_path="conf", config_name="config_base_instance_segmentation.yaml")
 def main(cfg: DictConfig):
-    if cfg['general']['train_mode']:
+    # pdb.set_trace()
+    if cfg["general"]["train_mode"]:
         train(cfg)
     else:
         test(cfg)
