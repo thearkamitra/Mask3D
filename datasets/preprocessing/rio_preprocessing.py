@@ -5,24 +5,36 @@ import json
 from pathlib import Path
 from hashlib import md5
 from natsort import natsorted
-
+import pdb
 import numpy as np
 from fire import Fire
 from tqdm import tqdm
 from loguru import logger
 
-from mix3d.datasets.preprocessing.base_preprocessing import BasePreprocessing
-from mix3d.utils.point_cloud_utils import load_obj_with_normals
+from base_preprocessing import BasePreprocessing
+import open3d as o3d
+
+
+def load_obj_with_normals(filepath):
+    mesh = o3d.io.read_triangle_mesh(str(filepath))
+    if not mesh.has_vertex_normals():
+        mesh.compute_vertex_normals()
+    coords = np.asarray(mesh.vertices)
+    normals = np.asarray(mesh.vertex_normals)
+    colors = np.asarray(mesh.vertex_colors)
+    feats = np.hstack((colors, normals))
+
+    return coords, feats
 
 
 class RioPreprocessing(BasePreprocessing):
     def __init__(
         self,
-        data_dir: str = "./data/raw/rio/rio",
-        save_dir: str = "./data/processed/rio",
+        data_dir: str = "../3RScan/data/3RScan",
+        save_dir: str = "../data/processed",
         modes: tuple = ("train", "validation", "test"),
         n_jobs: int = -1,
-        git_repo: str = "./data/raw/rio/3RScan",
+        git_repo: str = "../3RScan/",
         label_db: str = "configs/scannet_preprocessing/label_database.yaml",
     ):
         super().__init__(data_dir, save_dir, modes, n_jobs)
@@ -31,27 +43,33 @@ class RioPreprocessing(BasePreprocessing):
         self.files = {}
         for mode in self.modes:
             mode = "val" if mode == "validation" else mode
-            trainval_split_dir = git_repo / "splits"
-            with open(Path(trainval_split_dir) / (mode + ".txt")) as f:
+            trainval_split_dir = git_repo / "tot_splits"
+            with open(Path(trainval_split_dir) / ("single_" + mode + ".txt")) as f:
                 # -1 because the last one is always empty
                 split_file = f.read().split("\n")[:-1]
 
             filepaths = []
             for folder in split_file:
-                filepaths.append(self.data_dir / folder / "mesh.refined.obj")
+                if os.path.exists(self.data_dir / folder / "mesh.refined.obj"):
+                    filepaths.append(self.data_dir / folder / "mesh.refined.obj")
+                elif os.path.exists(self.data_dir / folder / "mesh.refined.v2.obj"):
+                    filepaths.append(self.data_dir / folder / "mesh.refined.v2.obj")
+                else:
+                    continue
             mode = "validation" if mode == "val" else mode
             self.files[mode] = natsorted(filepaths)
-
+        self.scannet_label_to_idx = {}
         self.rio_to_scannet_label = {}
         with open(git_repo / "data" / "mapping.tsv") as f:
             reader = csv.reader(f, delimiter="\t")
             columns = next(reader)
             raw_category = columns.index("Label")
             nyu40class = columns.index("NYU40 Mapping")
+            nyu40_label = nyu40class - 1
             for row in reader:
                 self.rio_to_scannet_label[row[raw_category]] = row[nyu40class]
-
-        self.label_db = self._load_yaml(Path(label_db))
+                self.scannet_label_to_idx[row[nyu40class]] = row[nyu40_label]
+        # self.label_db = self._load_yaml(Path(label_db))
 
     def process_file(self, filepath, mode):
         """process_file.
@@ -77,11 +95,10 @@ class RioPreprocessing(BasePreprocessing):
         file_len = len(coords)
         filebase["file_len"] = file_len
         points = np.hstack((coords, features))
-
         if mode in ["train", "validation"]:
             # getting instance info
-            instance_info_filepath = filepath.parent / "semseg.json"
-            segment_indexes_filepath = next(filepath.parent.glob("*.segs.json"))
+            instance_info_filepath = filepath.parent / "semseg.v2.json"
+            segment_indexes_filepath = next(filepath.parent.glob("*.segs.v2.json"))
             instance_db = self._read_json(instance_info_filepath)
             segments = self._read_json(segment_indexes_filepath)
             segments = np.array(segments["segIndices"])
@@ -95,12 +112,10 @@ class RioPreprocessing(BasePreprocessing):
                 occupied_indices = np.isin(segments, segments_occupied)
                 labels[occupied_indices, 1] = instance["id"]
                 scannet_label = self.rio_to_scannet_label.get(instance["label"], -1)
-                for k, v in self.label_db.items():
-                    if v["name"] == scannet_label:
-                        labels[occupied_indices, 0] = k
-                        break
-            points = np.hstack((points, labels))
+                labels[occupied_indices, 0] = self.scannet_label_to_idx[scannet_label]
 
+            points = np.hstack((points, labels))
+        # pdb.set_trace()
         processed_filepath = self.save_dir / mode / f"{scene_id}.npy"
         if not processed_filepath.parent.exists():
             processed_filepath.parent.mkdir(parents=True, exist_ok=True)
