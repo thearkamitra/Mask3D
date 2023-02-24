@@ -3,29 +3,30 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from fire import Fire
-from natsort import natsorted
+# from natsort import natsorted
 from loguru import logger
-
+import pdb
 from datasets.preprocessing.base_preprocessing import BasePreprocessing
-from utils.point_cloud_utils import load_ply_with_normals
+# from utils.point_cloud_utils import load_ply_with_normals
 
-from datasets.scannet200.scannet200_constants import VALID_CLASS_IDS_200, SCANNET_COLOR_MAP_200, CLASS_LABELS_200
+# from datasets.scannet200.scannet200_constants import VALID_CLASS_IDS_200, SCANNET_COLOR_MAP_200, CLASS_LABELS_200
 
 
 class ScannetPreprocessing(BasePreprocessing):
     def __init__(
             self,
-            data_dir: str = "./data/raw/scannet/scannet",
-            save_dir: str = "./data/processed/scannet",
+            data_dir: str = "./datasets/",
+            save_dir: str = ".",
             modes: tuple = ("train", "validation", "test"),
             n_jobs: int = -1,
-            git_repo: str = "./data/raw/scannet/ScanNet",
+            git_repo: str = ".",
             scannet200: bool = False
     ):
         super().__init__(data_dir, save_dir, modes, n_jobs)
 
         self.scannet200 = scannet200
-
+        self.data_dir = Path(data_dir) 
+        pdb.set_trace()
         if self.scannet200:
             self.labels_pd = pd.read_csv(self.data_dir / "scannetv2-labels.combined.tsv", sep='\t', header=0)
 
@@ -72,9 +73,9 @@ class ScannetPreprocessing(BasePreprocessing):
             )
             df = pd.DataFrame([{"name": "empty"}]).append(df)
             df["validation"] = False
-
+            pdb.set_trace()
             with open(
-                    git_repo / "Tasks" / "Benchmark" / "classes_SemVoxLabel-nyu40id.txt"
+                    self.data_dir/ "classes_SemVoxLabel-nyu40id.txt"
             ) as f:
                 for_validation = f.read().split("\n")
             for category in for_validation:
@@ -82,7 +83,7 @@ class ScannetPreprocessing(BasePreprocessing):
                 df.loc[index, "validation"] = True
 
             # doing this hack because otherwise I will have to install imageio
-            with open(git_repo / "BenchmarkScripts" / "util.py") as f:
+            with open(self.data_dir / "util.py") as f:
                 util = f.read()
                 color_list = eval("[" + util.split("return [\n")[1])
 

@@ -6,7 +6,7 @@ from typing import List, Optional, Tuple, Union
 from random import choice
 from copy import deepcopy
 from random import randrange
-
+import pdb
 
 import numpy
 import torch
@@ -83,6 +83,9 @@ class SemanticSegmentationDataset(Dataset):
         self.color_drop = color_drop
 
         if self.dataset_name == "scannet":
+            self.color_map = SCANNET_COLOR_MAP_20
+            self.color_map[255] = (255, 255, 255)
+        elif self.dataset_name == "rio":
             self.color_map = SCANNET_COLOR_MAP_20
             self.color_map[255] = (255, 255, 255)
         elif self.dataset_name == "stpls3d":

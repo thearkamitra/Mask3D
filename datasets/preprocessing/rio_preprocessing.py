@@ -35,7 +35,7 @@ class RioPreprocessing(BasePreprocessing):
         modes: tuple = ("train", "validation", "test"),
         n_jobs: int = -1,
         git_repo: str = "../3RScan/",
-        label_db: str = "configs/scannet_preprocessing/label_database.yaml",
+        label_db: str = "./label_database.yaml",
     ):
         super().__init__(data_dir, save_dir, modes, n_jobs)
 
