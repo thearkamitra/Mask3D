@@ -105,6 +105,8 @@ class RioPreprocessing(BasePreprocessing):
             filebase["raw_instance_filepath"] = instance_info_filepath
             filebase["raw_segmentation_filepath"] = segment_indexes_filepath
 
+            segment_ids = np.unique(segments, return_inverse=True)[1]
+            points = np.hstack((points, segment_ids[..., None]))
             # adding instance label
             labels = np.full((points.shape[0], 2), -1)
             for instance in instance_db["segGroups"]:
