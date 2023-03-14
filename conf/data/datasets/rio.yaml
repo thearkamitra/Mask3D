@@ -14,8 +14,8 @@ train_dataset:
   add_colors: ${data.add_colors}
   add_normals: ${data.add_normals}
   add_instance: ${data.add_instance}
-  filter_out_classes: []
-  label_offset: 0
+  filter_out_classes: [0, 1]
+  label_offset: 2
 
 validation_dataset:
   _target_: datasets.semseg.SemanticSegmentationDataset
@@ -32,8 +32,8 @@ validation_dataset:
   add_colors: ${data.add_colors}
   add_normals: ${data.add_normals}
   add_instance: ${data.add_instance}
-  filter_out_classes: []
-  label_offset: 0
+  filter_out_classes: [0, 1]
+  label_offset: 2
 
 test_dataset:
   _target_: datasets.semseg.SemanticSegmentationDataset
@@ -50,5 +50,5 @@ test_dataset:
   add_colors: ${data.add_colors}
   add_normals: ${data.add_normals}
   add_instance: ${data.add_instance}
-  filter_out_classes: []
-  label_offset: 0
+  filter_out_classes: [0, 1]
+  label_offset: 2

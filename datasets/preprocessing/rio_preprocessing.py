@@ -117,12 +117,29 @@ class RioPreprocessing(BasePreprocessing):
                 labels[occupied_indices, 0] = self.scannet_label_to_idx[scannet_label]
 
             points = np.hstack((points, labels))
+            gt_data = points[:,-2]*1000 + points[:,-1] + 1
+        else:
+            segment_indexes_filepath = next(filepath.parent.glob("*.segs.v2.json"))
+            segments = self._read_json(segment_indexes_filepath)
+            segments = np.array(segments["segIndices"])
+            segment_ids = np.unique(segments, return_inverse=True)[1]
+            points = np.hstack((points, segment_ids[..., None]))
+            filebase["raw_segmentation_filepath"] = segment_indexes_filepath
+            
         # pdb.set_trace()
         processed_filepath = self.save_dir / mode / f"{scene_id}.npy"
         if not processed_filepath.parent.exists():
             processed_filepath.parent.mkdir(parents=True, exist_ok=True)
         np.save(processed_filepath, points.astype(np.float32))
         filebase["filepath"] = str(processed_filepath)
+        if mode == "test":
+            return filebase
+        processed_gt_filepath = self.save_dir / "instance_gt" / mode / f"{scene_id}.txt"
+        if not processed_gt_filepath.parent.exists():
+            processed_gt_filepath.parent.mkdir(parents=True, exist_ok=True)
+        np.savetxt(processed_gt_filepath, gt_data.astype(np.int32), fmt="%d")
+        filebase["instance_gt_filepath"] = str(processed_gt_filepath)
+
         return filebase
 
     def _read_json(self, path):

@@ -41,7 +41,7 @@ general:
 
   ignore_mask_idx: []
 
-  max_batch_size: 99999999
+  max_batch_size: 99
 
   save_dir: saved/${general.experiment_name}
   # time/commit/md5(config)_uuid
