@@ -97,7 +97,6 @@ def test(cfg: DictConfig):
 
 @hydra.main(config_path="conf", config_name="config_base_instance_segmentation.yaml")
 def main(cfg: DictConfig):
-    # pdb.set_trace()
     if cfg["general"]["train_mode"]:
         train(cfg)
     else:

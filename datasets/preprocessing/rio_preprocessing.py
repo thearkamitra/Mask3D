@@ -31,7 +31,7 @@ class RioPreprocessing(BasePreprocessing):
     def __init__(
         self,
         data_dir: str = "../3RScan/data/3RScan",
-        save_dir: str = "../data/processed",
+        save_dir: str = "../data_3RScan/processed",
         modes: tuple = ("train", "validation", "test"),
         n_jobs: int = -1,
         git_repo: str = "../3RScan/",
@@ -50,10 +50,10 @@ class RioPreprocessing(BasePreprocessing):
 
             filepaths = []
             for folder in split_file:
-                if os.path.exists(self.data_dir / folder / "mesh.refined.obj"):
-                    filepaths.append(self.data_dir / folder / "mesh.refined.obj")
-                elif os.path.exists(self.data_dir / folder / "mesh.refined.v2.obj"):
+                if os.path.exists(self.data_dir / folder / "mesh.refined.v2.obj"):
                     filepaths.append(self.data_dir / folder / "mesh.refined.v2.obj")
+                elif os.path.exists(self.data_dir / folder / "mesh.refined.obj"):
+                    filepaths.append(self.data_dir / folder / "mesh.refined.obj")
                 else:
                     continue
             mode = "validation" if mode == "val" else mode
@@ -117,7 +117,7 @@ class RioPreprocessing(BasePreprocessing):
                 labels[occupied_indices, 0] = self.scannet_label_to_idx[scannet_label]
 
             points = np.hstack((points, labels))
-            gt_data = points[:,-2]*1000 + points[:,-1] + 1
+            gt_data = points[:, -2] * 1000 + points[:, -1] + 1
         else:
             segment_indexes_filepath = next(filepath.parent.glob("*.segs.v2.json"))
             segments = self._read_json(segment_indexes_filepath)
@@ -125,7 +125,7 @@ class RioPreprocessing(BasePreprocessing):
             segment_ids = np.unique(segments, return_inverse=True)[1]
             points = np.hstack((points, segment_ids[..., None]))
             filebase["raw_segmentation_filepath"] = segment_indexes_filepath
-            
+
         # pdb.set_trace()
         processed_filepath = self.save_dir / mode / f"{scene_id}.npy"
         if not processed_filepath.parent.exists():

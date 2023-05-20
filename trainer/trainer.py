@@ -13,7 +13,7 @@ from collections import defaultdict
 from sklearn.cluster import DBSCAN
 from utils.votenet_utils.eval_det import eval_det
 from datasets.scannet200.scannet200_splits import HEAD_CATS_SCANNET_200, TAIL_CATS_SCANNET_200, COMMON_CATS_SCANNET_200, VALID_CLASS_IDS_200_VALIDATION
-
+import pdb
 import hydra
 import MinkowskiEngine as ME
 import numpy as np
@@ -108,11 +108,10 @@ class InstanceSegmentation(pl.LightningModule):
         if self.config.data.add_raw_coordinates:
             raw_coordinates = data.features[:, -3:]
             data.features = data.features[:, :-3]
-
+        print(f"The data input shape is {data.features.shape}")
         data = ME.SparseTensor(coordinates=data.coordinates,
                               features=data.features,
                               device=self.device)
-
         try:
             output = self.forward(data,
                                   point2segment=[target[i]['point2segment'] for i in range(len(target))],
@@ -123,7 +122,7 @@ class InstanceSegmentation(pl.LightningModule):
                 return None
             else:
                 raise run_err
-
+        print(f"The output shape is {output.shape}")
         try:
             losses = self.criterion(output, target, mask_type=self.mask_type)
         except ValueError as val_err:
@@ -708,7 +707,7 @@ class InstanceSegmentation(pl.LightningModule):
         root_path = f"eval_output"
         base_path = f"{root_path}/instance_evaluation_{self.config.general.experiment_name}_{self.current_epoch}"
 
-        if self.validation_dataset.dataset_name in ["scannet", "stpls3d", "scannet200"]:
+        if self.validation_dataset.dataset_name in ["scannet", "stpls3d", "scannet200", "rio"]:
             gt_data_path = f"{self.validation_dataset.data_dir[0]}/instance_gt/{self.validation_dataset.mode}"
         else:
             gt_data_path = f"{self.validation_dataset.data_dir[0]}/instance_gt/Area_{self.config.general.area}"

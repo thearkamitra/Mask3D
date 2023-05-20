@@ -41,7 +41,7 @@ general:
 
   ignore_mask_idx: []
 
-  max_batch_size: 99
+  max_batch_size: 999999
 
   save_dir: saved/${general.experiment_name}
   # time/commit/md5(config)_uuid
@@ -54,7 +54,7 @@ general:
 defaults:
   - data: indoor
   - data/data_loaders: simple_loader
-  - data/datasets: rio
+  - data/datasets: scannet
   - data/collation_functions: voxelize_collate
   - logging: full
   - model: mask3d
